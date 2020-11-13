@@ -1,61 +1,57 @@
-import {Request, Response} from 'express'
+import { Request, Response } from "express";
 import { getRepository } from "typeorm";
-import Orphanage from "../models/Orphanages";
-
+import Orphanage from "../models/Orphanage";
 
 export default {
+  async show(request: Request, response: Response) {
+    const { id } = request.params;
+    const orphanagesRepository = getRepository(Orphanage);
 
+    const orphanages = await orphanagesRepository.findOneOrFail(id);
 
+    return response.json(orphanages);
+  },
 
+  async index(request: Request, response: Response) {
+    const orphanagesRepository = getRepository(Orphanage);
 
-    async show(request : Request, response: Response) {
+    const orphanage = await orphanagesRepository.find();
 
-        const {id} = request.params; 
-        const orphanagesRepository = getRepository(Orphanage); 
+    return response.json(orphanage);
+  },
 
+  async create(request: Request, response: Response) {
+    const {
+      name,
+      latitude,
+      longitude,
+      about,
+      instructions,
+      opening_hours,
+      open_on_weekends,
+    } = request.body;
 
-        const orphanages = await orphanagesRepository.findOneOrFail (id) ; 
+    const orphanagesRepository = getRepository(Orphanage);
 
-        return response. json(orphanages);
+    const requestImages = request.files as Express.Multer.File[];
 
-    },
+    const images = requestImages.map((image) => {
+      return { path: image.filename }
+    });
 
-    async index(request : Request, response: Response) {
-        const orphanagesRepository = getRepository(Orphanage); 
- 
+    const orphanage = orphanagesRepository.create({
+      name,
+      latitude,
+      longitude,
+      about,
+      instructions,
+      opening_hours,
+      open_on_weekends,
+      images
+    });
 
-        const orphanage = await orphanagesRepository.find() ; 
+    await orphanagesRepository.save(orphanage).catch(err => console.log(err));
 
-        return response. json(orphanage);
-    }, 
-
-
-    async create(request : Request, response: Response) {
-        const {
-            name,
-            latitude,
-            longitude,
-            about,
-            instructions,
-            opening_hours,
-            open_on_weekends,
-          } = request.body;
-        
-          const orphanagesRepository = getRepository(Orphanage);
-        
-          const orphanage = orphanagesRepository.create({
-            name,
-            latitude,
-            longitude,
-            about,
-            instructions,
-            opening_hours, 
-            open_on_weekends,
-          });
-        
-          await orphanagesRepository.save(orphanage);
-        
-          return response.status(201).json(orphanage)
-        
-    }
-}
+    return response.status(201).json(orphanage);
+  },
+};
